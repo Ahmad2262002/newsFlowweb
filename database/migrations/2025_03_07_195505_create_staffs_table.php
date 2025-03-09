@@ -11,11 +11,13 @@ return new class extends Migration
      */
     public function up()
 {
-    Schema::create('comment', function (Blueprint $table) {
-        $table->id('comment_id');
-        $table->text('content');
-        $table->foreignId('user_id')->constrained('user', 'user_id');
-        $table->foreignId('article_id')->constrained('article', 'article_id');
+    Schema::create('staffs', function (Blueprint $table) {
+        $table->id('staff_id');
+        $table->foreignId('role_id')->constrained('roles', 'role_id');
+        $table->string('username');
+        $table->string('email');
+        $table->string('password_hash');
+        $table->boolean('is_locked');
         $table->timestamps();
     });
 }
@@ -25,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('comment');
+        Schema::dropIfExists('staff');
     }
 };

@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up()
 {
-    Schema::create('article', function (Blueprint $table) {
+    Schema::create('articles', function (Blueprint $table) {
         $table->id('article_id');
         $table->string('title');
         $table->text('content');
@@ -19,7 +19,7 @@ return new class extends Migration
         $table->timestamp('published_date');
         $table->string('author_name');
         $table->tinyInteger('status');
-        $table->foreignId('employee_id')->constrained('employee', 'employee_id');
+        $table->foreignId('employee_id')->constrained('employees', 'employee_id');
         $table->timestamps();
     });
 }

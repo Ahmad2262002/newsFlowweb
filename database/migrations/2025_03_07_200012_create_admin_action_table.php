@@ -15,8 +15,8 @@ return new class extends Migration
         $table->id('action_id');
         $table->string('action_type');
         $table->text('description');
-        $table->foreignId('admin_id')->constrained('admin', 'admin_id');
-        $table->foreignId('target_staff_id')->nullable()->constrained('staff', 'staff_id');
+        $table->foreignId('admin_id')->constrained('admins', 'admin_id');
+        $table->foreignId('target_staff_id')->nullable()->constrained('staffs', 'staff_id');
         $table->timestamps();
     });
 }

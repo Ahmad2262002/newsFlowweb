@@ -11,10 +11,10 @@ return new class extends Migration
      */
     public function up()
 {
-    Schema::create('like', function (Blueprint $table) {
-        $table->id('like_id');
-        $table->foreignId('user_id')->constrained('user', 'user_id');
-        $table->foreignId('article_id')->constrained('article', 'article_id');
+    Schema::create('admins', function (Blueprint $table) {
+        $table->id('admin_id');
+        $table->foreignId('staff_id')->constrained('staffs', 'staff_id');
+        $table->string('access_level');
         $table->timestamps();
     });
 }
@@ -24,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('like');
+        Schema::dropIfExists('admin');
     }
 };

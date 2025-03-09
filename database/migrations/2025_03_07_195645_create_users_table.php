@@ -11,10 +11,11 @@ return new class extends Migration
      */
     public function up()
 {
-    Schema::create('share', function (Blueprint $table) {
-        $table->id('share_id');
-        $table->foreignId('user_id')->constrained('user', 'user_id');
-        $table->foreignId('article_id')->constrained('article', 'article_id');
+    Schema::create('users', function (Blueprint $table) {
+        $table->id('user_id');
+        $table->foreignId('staff_id')->constrained('staffs', 'staff_id');
+        $table->string('preferences');
+        $table->string('profile_picture')->nullable();
         $table->timestamps();
     });
 }
@@ -24,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('share');
+        Schema::dropIfExists('user');
     }
 };

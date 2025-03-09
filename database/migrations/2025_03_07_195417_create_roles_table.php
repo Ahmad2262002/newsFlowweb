@@ -11,12 +11,9 @@ return new class extends Migration
      */
     public function up()
 {
-    Schema::create('feedback', function (Blueprint $table) {
-        $table->id('feedback_id');
-        $table->text('content');
-        $table->integer('rating');
-        $table->foreignId('user_id')->constrained('user', 'user_id');
-        $table->foreignId('article_id')->constrained('article', 'article_id');
+    Schema::create('roles', function (Blueprint $table) {
+        $table->id('role_id');
+        $table->string('role_name');
         $table->timestamps();
     });
 }
@@ -26,6 +23,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('feedback');
+        Schema::dropIfExists('role');
     }
 };

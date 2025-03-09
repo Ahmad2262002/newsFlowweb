@@ -10,20 +10,20 @@ return new class extends Migration
      * Run the migrations.
      */
     public function up()
-    {
-        Schema::create('categorie', function (Blueprint $table) {
-            $table->id('category_id');
-            $table->string('name');
-            $table->string('slug');
-            $table->timestamps();
-        });
-    }
+{
+    Schema::create('likes', function (Blueprint $table) {
+        $table->id('like_id');
+        $table->foreignId('user_id')->constrained('users', 'user_id');
+        $table->foreignId('article_id')->constrained('articles', 'article_id');
+        $table->timestamps();
+    });
+}
 
     /**
      * Reverse the migrations.
      */
     public function down(): void
     {
-        Schema::dropIfExists('categorie');
+        Schema::dropIfExists('like');
     }
 };
