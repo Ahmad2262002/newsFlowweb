@@ -38,7 +38,12 @@ return [
     'guards' => [
         'web' => [
             'driver' => 'session',
-            'provider' => 'users',
+            'provider' => 'users', // Uses the 'users' provider for web authentication
+        ],
+
+        'api' => [
+            'driver' => 'sanctum', // Use Sanctum for API authentication
+            'provider' => 'staff', // Use the 'staff' provider for API authentication
         ],
     ],
 
@@ -62,7 +67,12 @@ return [
     'providers' => [
         'users' => [
             'driver' => 'eloquent',
-            'model' => App\Models\User::class,
+            'model' => App\Models\User::class, // Default User model
+        ],
+
+        'staff' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\Staff::class, // Use the Staff model for API authentication
         ],
 
         // 'users' => [
@@ -93,6 +103,13 @@ return [
     'passwords' => [
         'users' => [
             'provider' => 'users',
+            'table' => 'password_reset_tokens',
+            'expire' => 60,
+            'throttle' => 60,
+        ],
+
+        'staff' => [
+            'provider' => 'staff', // Use the 'staff' provider for password resets
             'table' => 'password_reset_tokens',
             'expire' => 60,
             'throttle' => 60,
