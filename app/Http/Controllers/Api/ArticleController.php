@@ -76,4 +76,15 @@ class ArticleController extends Controller
         $article->update(['status' => 0]); // Unpublish
         return response()->json($article);
     }
+     // Fetch shares of an article
+     public function shares($id)
+     {
+         // Ensure the article exists
+         $article = Article::findOrFail($id);
+ 
+         // Fetch the shares for the article
+         $shares = $article->shares;
+ 
+         return response()->json($shares);
+     }
 }

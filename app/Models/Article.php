@@ -42,7 +42,7 @@ class Article extends Model
 
     public function shares()
     {
-        return $this->hasMany(Share::class, 'article_id');
+        return $this->hasMany(Share::class, 'article_id', 'article_id');
     }
 
     public function feedbacks()

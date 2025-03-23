@@ -10,6 +10,8 @@ class Role extends Model
     use HasFactory;
 
     protected $primaryKey = 'role_id';
+    public $timestamps = true; // Enable automatic timestamps (created_at, updated_at)
+
     protected $fillable = ['role_name'];
 
     public function staffs()

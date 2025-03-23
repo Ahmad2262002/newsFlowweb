@@ -15,6 +15,15 @@ class Staff extends Authenticatable
     protected $table = 'staffs';
     protected $primaryKey = 'staff_id';
     protected $fillable = ['role_id', 'username', 'email', 'password_hash', 'is_locked'];
+    // Hide the password hash from the response
+    protected $hidden = ['password_hash'];
+
+    
+    // Override the default password field
+    public function getAuthPassword()
+    {
+        return $this->password_hash;
+    }
 
     public function role()
     {
