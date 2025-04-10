@@ -47,7 +47,6 @@ class AuthController extends Controller
                 'user_profile' => $user,
                 'token' => $token
             ], 201);
-
         } catch (\Exception $e) {
             return response()->json([
                 'error' => 'User registration failed: ' . $e->getMessage()
@@ -89,7 +88,6 @@ class AuthController extends Controller
                 'admin_profile' => $admin,
                 'token' => $token
             ], 201);
-
         } catch (\Exception $e) {
             return response()->json([
                 'error' => 'Admin registration failed: ' . $e->getMessage()
@@ -101,33 +99,41 @@ class AuthController extends Controller
 
     // Login function (common for all roles)
     public function login(Request $request)
-{
-    $request->validate([
-        'email' => 'required|email',
-        'password' => 'required'
-    ]);
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'password' => 'required'
+        ]);
 
-    $staff = Staff::where('email', $request->email)->first();
+        $staff = Staff::where('email', $request->email)->first();
 
-    if (!$staff || !Hash::check($request->password, $staff->password_hash)) {
-        return response()->json(['error' => 'Invalid credentials'], 401);
+        if (!$staff || !Hash::check($request->password, $staff->password_hash)) {
+            return response()->json(['error' => 'Invalid credentials'], 401);
+        }
+
+        // Revoke existing tokens if they exist
+        $staff->tokens()->delete();
+
+        // Create a new token
+        $token = $staff->createToken('auth-token')->plainTextToken;
+
+        // Fetch the user profile using the staff_id
+        $user = User::where('staff_id', $staff->staff_id)->first();
+
+        if (!$user) {
+            return response()->json(['error' => 'User profile not found'], 404);
+        }
+
+        return response()->json([
+            'staff' => $staff,
+            'user_profile' => $user, // Include the user profile in the response
+            'token' => $token
+        ]);
     }
 
-    // Revoke existing tokens if they exist
-    $staff->tokens()->delete();
-
-    // Create a new token
-    $token = $staff->createToken('auth-token')->plainTextToken;
-
-    return response()->json([
-        'staff' => $staff,
-        'token' => $token
-    ]);
-}
-
-public function logout(Request $request)
-{
-    $request->user()->currentAccessToken()->delete();
-    return response()->json(['message' => 'Logged out']);
-}
+    public function logout(Request $request)
+    {
+        $request->user()->currentAccessToken()->delete();
+        return response()->json(['message' => 'Logged out']);
+    }
 }

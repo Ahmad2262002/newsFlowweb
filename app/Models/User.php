@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Support\Facades\Storage;
 
 class User extends Model
 {
@@ -15,6 +16,14 @@ class User extends Model
         'preferences',
         'profile_picture'
     ];
+
+    // Accessor for profile picture URL
+    public function getProfilePictureUrlAttribute()
+    {
+        return $this->profile_picture 
+            ? Storage::url($this->profile_picture)
+            : null;
+    }
 
     public function staff()
     {

@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\LikeController;
 use App\Http\Controllers\Api\CommentController;
 use App\Http\Controllers\Api\ShareController;
 use App\Http\Controllers\Api\FeedbackController;
+use App\Http\Controllers\Api\InteractionCountController;
 
 
 
@@ -27,7 +28,7 @@ use App\Http\Controllers\Api\FeedbackController;
 // Public routes (no authentication required)
 Route::post('/register-user', [AuthController::class, 'registerUser']); // Register a user
 Route::post('/register-admin', [AuthController::class, 'registerAdmin']); // Register an admin
-Route::post('/login', [AuthController::class, 'login']); // Login for admin and employees
+Route::post('/login', [AuthController::class, 'login']); // Login for admin, users  and employees
 // fetsh the share
 Route::get('/user/articles/{id}/shares', [ArticleController::class, 'shares']);
 
@@ -90,12 +91,13 @@ Route::middleware('auth:sanctum')->group(function () {
         // Unlike an article
         Route::delete('/user/articles/likes/{id}', [LikeController::class, 'destroy']);
         
-        // Add a comment
-        Route::post('/user/articles/comments', [CommentController::class, 'store']);
+        Route::get('/user/articles/{article}/comments', [CommentController::class, 'index']); // RESTful style
+        Route::post('/user/articles/{article}/comments', [CommentController::class, 'store']); // POST comment
+        Route::delete('/user/articles/comments/{comment}', [CommentController::class, 'destroy']); // DELETE comment
 
-        // Delete a comment
-        Route::delete('/user/articles/comments/{id}', [CommentController::class, 'destroy']);
-        // Share an article
+        Route::get('/user/articles/{article}/counts', [InteractionCountController::class, 'getCounts']);
+
+
         Route::post('/user/articles/{id}/shares', [ShareController::class, 'store']);
 
         // Submit feedback

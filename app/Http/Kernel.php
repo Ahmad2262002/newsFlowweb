@@ -14,6 +14,8 @@ class Kernel extends HttpKernel
      * @var array<int, class-string|string>
      */
     protected $middleware = [
+
+        
         \Illuminate\Http\Middleware\HandleCors::class, // Laravel's built-in CORS middleware
         \App\Http\Middleware\Cors::class, // Your custom CORS middleware
         // \App\Http\Middleware\TrustHosts::class,
@@ -74,5 +76,8 @@ class Kernel extends HttpKernel
         'admin' => \App\Http\Middleware\AdminMiddleware::class,
         'employee' => \App\Http\Middleware\EmployeeMiddleware::class,
         'user' => \App\Http\Middleware\UserMiddleware::class,
+
+        'validate.article_id' => \App\Http\Middleware\ValidateArticleId::class,
+
     ];
 }
