@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\CommentController;
 use App\Http\Controllers\Api\ShareController;
 use App\Http\Controllers\Api\FeedbackController;
 use App\Http\Controllers\Api\InteractionCountController;
+use Illuminate\Support\Facades\Mail;
 
 
 
@@ -28,6 +29,10 @@ use App\Http\Controllers\Api\InteractionCountController;
 // Public routes (no authentication required)
 Route::post('/register-user', [AuthController::class, 'registerUser']); // Register a user
 Route::post('/register-admin', [AuthController::class, 'registerAdmin']); // Register an admin
+Route::post('/verify-otp', [AuthController::class, 'verifyOtpAndRegister']); // Add this line
+Route::post('/forgot-password', [AuthController::class, 'sendResetLink']);
+Route::post('/reset-password', [AuthController::class, 'resetPassword']);
+
 Route::post('/login', [AuthController::class, 'login']); // Login for admin, users  and employees
 // fetsh the share
 Route::get('/user/articles/{id}/shares', [ArticleController::class, 'shares']);
@@ -38,9 +43,12 @@ Route::middleware('auth:sanctum')->group(function () {
     // Logout route (common for all roles)
     Route::post('/logout', [AuthController::class, 'logout']);
 
+    // Account deletion route (common for all roles)
+    Route::delete('/delete-account', [AuthController::class, 'deleteAccount']);
+
     // Profile management routes (common for all roles)
     Route::prefix('/profile')->group(function () {
-        Route::put('/', [ProfileController::class, 'updateProfile']); // Edit profile
+        Route::put('/', [ProfileController::class, 'updateProfile'])->middleware('auth:sanctum');
         Route::put('/password', [ProfileController::class, 'changePassword']); // Change password
     });
 
@@ -110,5 +118,17 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/user/dashboard', function () {
             return response()->json(['message' => 'Welcome to the User Dashboard']);
         });
+    });
+
+    Route::get('/send-otp', function() {
+        try {
+            Mail::to('test@example.com')->send(new \App\Mail\OtpMail(123456));
+            return 'Email sent successfully!';
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => $e->getMessage(),
+                'mail_config' => config('mail')
+            ], 500);
+        }
     });
 });

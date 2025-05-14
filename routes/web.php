@@ -1,6 +1,9 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\OtpMail;
+use Illuminate\Http\Request;
 
 /*
 |--------------------------------------------------------------------------
@@ -13,6 +16,27 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::get('/', function () {
-    return view('welcome');
+Route::get('/send-otp', function(Request $request) {
+    $request->validate([
+        'email' => 'required|email',
+        'otp' => 'required|numeric'
+    ]);
+    
+    try {
+        $email = $request->input('email');
+        $otp = $request->input('otp');
+        
+        Mail::to($email)->send(new OtpMail($otp));
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'OTP sent successfully to ' . $email
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'error' => $e->getMessage(),
+            'config' => config('mail')
+        ], 500);
+    }
 });
