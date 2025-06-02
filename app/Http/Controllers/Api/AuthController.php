@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class AuthController extends Controller
 {
@@ -46,7 +47,7 @@ class AuthController extends Controller
                 Mail::to($email)->send(new OtpMail($otp));
                 return response()->json(['message' => 'OTP sent'], 200);
             } catch (\Exception $mailException) {
-                \Log::error('Mail sending failed: ' . $mailException->getMessage());
+                Log::error('Mail sending failed: ' . $mailException->getMessage());
                 return response()->json([
                     'error' => 'Failed to send OTP',
                     'details' => $mailException->getMessage()
@@ -54,7 +55,7 @@ class AuthController extends Controller
             }
             
         } catch (\Exception $e) {
-            \Log::error('Registration error: ' . $e->getMessage());
+            Log::error('Registration error: ' . $e->getMessage());
             return response()->json([
                 'error' => 'Registration failed',
                 'details' => $e->getMessage()
@@ -211,14 +212,14 @@ public function deleteAccount(Request $request)
         }
         
         // Start transaction to ensure data consistency
-        \DB::beginTransaction();
+        DB::beginTransaction();
         
         try {
             // Delete all related data
-            \DB::table('likes')->where('user_id', $user->user_id)->delete();
-            \DB::table('comments')->where('user_id', $user->user_id)->delete();
-            \DB::table('shares')->where('user_id', $user->user_id)->delete();
-            \DB::table('feedbacks')->where('user_id', $user->user_id)->delete();
+            DB::table('likes')->where('user_id', $user->user_id)->delete();
+            DB::table('comments')->where('user_id', $user->user_id)->delete();
+            DB::table('shares')->where('user_id', $user->user_id)->delete();
+            DB::table('feedbacks')->where('user_id', $user->user_id)->delete();
             
             // Delete the user profile
             $user->delete();
@@ -227,19 +228,19 @@ public function deleteAccount(Request $request)
             $staff->delete();
             
             // Commit the transaction
-            \DB::commit();
+            DB::commit();
             
             return response()->json(['message' => 'Account and all related data deleted successfully']);
             
         } catch (\Exception $e) {
             // Rollback transaction on error
-            \DB::rollBack();
-            \Log::error('Account deletion failed: ' . $e->getMessage());
+            DB::rollBack();
+            Log::error('Account deletion failed: ' . $e->getMessage());
             return response()->json(['error' => 'Account deletion failed'], 500);
         }
         
     } catch (\Exception $e) {
-        \Log::error('Account deletion error: ' . $e->getMessage());
+        Log::error('Account deletion error: ' . $e->getMessage());
         return response()->json(['error' => 'Unauthorized'], 401);
     }
 }

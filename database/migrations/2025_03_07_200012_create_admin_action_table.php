@@ -14,9 +14,10 @@ return new class extends Migration
     Schema::create('admin_action', function (Blueprint $table) {
         $table->id('action_id');
         $table->string('action_type');
+        $table->dateTime('action_date'); // Make sure this exists if in fillable
         $table->text('description');
-        $table->foreignId('admin_id')->constrained('admins', 'admin_id');
-        $table->foreignId('target_staff_id')->nullable()->constrained('staffs', 'staff_id');
+        $table->foreignId('admin_id')->constrained('admins', 'admin_id'); 
+        $table->foreignId('target_staff_id')->nullable()->constrained('staffs', 'staff_id'); 
         $table->timestamps();
     });
 }

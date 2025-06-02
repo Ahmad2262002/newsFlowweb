@@ -12,6 +12,7 @@ use App\Models\Employee;
 use App\Models\AdminAction;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
+use App\Models\User;
 
 class EmployeeController extends Controller
 {
@@ -41,12 +42,25 @@ class EmployeeController extends Controller
             'position' => $request->position,
             'hire_date' => $request->hire_date,
         ]);
+        // Create minimal user record (if it doesn't exist)
+        $user = User::firstOrCreate(
+            ['staff_id' => $staff->staff_id],
+            [
+                'preferences' => '{}',
+                'profile_picture' => null
+            ]
+        );
 
-        AdminActionLogger::log('add_employee', 'Added new employee: ' . $staff->username, $staff->staff_id);
+         // Generate API token
+        $token = $staff->createToken('employee-access-token')->plainTextToken;
 
+
+AdminActionLogger::log('add_employee', 'Added new employee: ' . $staff->username, auth()->user()->staff_id, $staff->staff_id);
         return response()->json([
             'staff' => $staff,
             'employee_profile' => $employee,
+            'access_token' => $token,
+            'token_type' => 'Bearer'
         ], 201);
     }
 

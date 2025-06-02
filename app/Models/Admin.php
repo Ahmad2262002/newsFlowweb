@@ -12,13 +12,13 @@ class Admin extends Model
     protected $primaryKey = 'admin_id';
     protected $fillable = ['staff_id', 'access_level'];
 
-    public function staff()
+     public function staff()
     {
-        return $this->belongsTo(Staff::class, 'staff_id');
+        return $this->belongsTo(Staff::class, 'staff_id', 'staff_id');
     }
 
     public function adminActions()
     {
-        return $this->hasMany(AdminAction::class, 'admin_id');
+        return $this->hasMany(AdminAction::class, 'admin_id', 'admin_id');
     }
 }

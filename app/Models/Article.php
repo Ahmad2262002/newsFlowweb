@@ -23,7 +23,8 @@ class Article extends Model
         'published_date',
         'author_name',
         'status',
-        'employee_id'
+        'employee_id',
+        'article_photo'
     ];
 
     protected $casts = [
@@ -64,4 +65,5 @@ class Article extends Model
     {
         return $this->hasMany(Feedback::class, 'article_id', 'article_id');
     }
+    
 }

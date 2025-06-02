@@ -52,6 +52,35 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/password', [ProfileController::class, 'changePassword']); // Change password
     });
 
+    // TEST ROUTE - Notification testing
+    Route::get('/test-notification', function() {
+        $article = App\Models\Article::first();
+        $user = App\Models\User::with('staff')->first();
+        
+        if (!$article || !$user) {
+            return response()->json([
+                'error' => 'Test data not found',
+                'message' => 'Please ensure you have at least one article and user in the database'
+            ], 404);
+        }
+        
+        try {
+            Mail::to($user->staff->email)
+                ->queue(new App\Mail\NewArticleNotification($article, $user));
+            
+            return response()->json([
+                'message' => "Notification queued for {$user->staff->email}",
+                'article_id' => $article->article_id,
+                'user_id' => $user->user_id
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Notification failed',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    });
+
     // Admin-only routes
     Route::middleware('admin')->group(function () {
         // Employee management
@@ -67,6 +96,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/admin/articles/{id}/publish', [ArticleController::class, 'publish']); // Publish article
         Route::post('/admin/articles/{id}/unpublish', [ArticleController::class, 'unpublish']); // Unpublish article
 
+        // Categories management
+        Route::apiResource('/admin/categories', \App\Http\Controllers\Api\CategoryController::class);
+
+        
+
         // Admin dashboard
         Route::get('/admin/dashboard', function () {
             return response()->json(['message' => 'Welcome to the Admin Dashboard']);
@@ -77,7 +111,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('employee')->group(function () {
 
         // Article management
-        Route::apiResource('/employee/articles', ArticleController::class)->except(['destroy']);
+        Route::apiResource('/employee/articles', controller: ArticleController::class)->except(['destroy']);
         //update article
         Route::put('/employee/articles/{id}', [ArticleController::class, 'update']);
         //delete article
@@ -93,11 +127,19 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // User-only routes
     Route::middleware('user')->group(function () {
+        Route::get('/user/articles/categories/{id}', [ArticleController::class, 'getArticlesByCategory']);
+
+
+        // View categories (read-only)
+        Route::get('/user/categories', [\App\Http\Controllers\Api\CategoryController::class, 'index']);
+        Route::get('/user/categories/{id}', [\App\Http\Controllers\Api\CategoryController::class, 'show']);
         // Like an article
         Route::post('/user/articles/likes', [LikeController::class, 'store']);
 
         // Unlike an article
         Route::delete('/user/articles/likes/{id}', [LikeController::class, 'destroy']);
+
+        Route::get('/user/articles/liked-articles', [LikeController::class, 'getLikedArticles']);
         
         Route::get('/user/articles/{article}/comments', [CommentController::class, 'index']); // RESTful style
         Route::post('/user/articles/{article}/comments', [CommentController::class, 'store']); // POST comment
@@ -119,6 +161,8 @@ Route::middleware('auth:sanctum')->group(function () {
             return response()->json(['message' => 'Welcome to the User Dashboard']);
         });
     });
+
+    
 
     Route::get('/send-otp', function() {
         try {
