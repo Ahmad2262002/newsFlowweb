@@ -5,9 +5,10 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rules\Password;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
 use App\Models\User;
 
 class ProfileController extends Controller
@@ -19,13 +20,19 @@ class ProfileController extends Controller
 
             // Validate incoming data
             $validatedData = $request->validate([
-                'username' => 'sometimes|string|max:255|unique:staffs,username,' . $staff->staff_id . ',staff_id',
-                'email' => 'sometimes|email|max:255|unique:staffs,email,' . $staff->staff_id . ',staff_id',
+                'username' => "sometimes|string|max:255|unique:staffs,username,{$staff->staff_id},staff_id",
+                'email' => "sometimes|email|max:255|unique:staffs,email,{$staff->staff_id},staff_id",
                 'profile_picture' => 'sometimes|string', // base64 image string
             ]);
-
             // Update username and email if provided
-            $staff->update($request->only(['username', 'email']));
+            $updateData = $request->only(['username', 'email']);
+            if (!empty($updateData)) {
+                DB::table('staffs')->where('staff_id', $staff->staff_id)->update($updateData);
+                // Optionally, refresh $staff with new data
+                foreach ($updateData as $key => $value) {
+                    $staff->$key = $value;
+                }
+            }
 
             // Handle the base64 profile picture
             if ($request->filled('profile_picture')) {
@@ -55,37 +62,37 @@ class ProfileController extends Controller
     }
 
     protected function handleBase64Image(string $base64Image, $staff): void
-{
-    // Extract base64 string
-    if (preg_match('/^data:image\/(\w+);base64,/', $base64Image, $type)) {
-        $extension = strtolower($type[1]); // jpg, png, gif, etc.
-        $base64Image = substr($base64Image, strpos($base64Image, ',') + 1);
-    } else {
-        throw new \Exception('Invalid base64 image string format.');
+    {
+        // Extract base64 string
+        if (preg_match('/^data:image\/(\w+);base64,/', $base64Image, $type)) {
+            $extension = strtolower($type[1]); // jpg, png, gif, etc.
+            $base64Image = substr($base64Image, strpos($base64Image, ',') + 1);
+        } else {
+            throw new \Exception('Invalid base64 image string format.');
+        }
+
+        $imageData = base64_decode($base64Image);
+
+        if ($imageData === false) {
+            throw new \Exception('Base64 decode failed.');
+        }
+
+        // Save file
+        $filename = uniqid() . '.' . $extension;
+        $path = storage_path('app/public/profile_pictures/' . $filename);
+        $path = storage_path("app/public/profile_pictures/{$filename}");
+        file_put_contents($path, $imageData);
+        // Link to user
+        $user = $staff->user ?? User::create([
+            'staff_id' => $staff->staff_id,
+            'preferences' => [],
+            'profile_picture' => null,
+        ]);
+
+        $user->update(['profile_picture' => 'profile_pictures/' . $filename]);
+        $user->update(['profile_picture' => "profile_pictures/{$filename}"]);
+        Log::info('Uploaded new profile picture:', ['path' => $path]);
     }
-
-    $imageData = base64_decode($base64Image);
-
-    if ($imageData === false) {
-        throw new \Exception('Base64 decode failed.');
-    }
-
-    // Save file
-    $filename = uniqid() . '.' . $extension;
-    $path = storage_path('app/public/profile_pictures/' . $filename);
-    file_put_contents($path, $imageData);
-
-    // Link to user
-    $user = $staff->user ?? User::create([
-        'staff_id' => $staff->staff_id,
-        'preferences' => [],
-        'profile_picture' => null,
-    ]);
-
-    $user->update(['profile_picture' => 'profile_pictures/' . $filename]);
-
-    Log::info('Uploaded new profile picture:', ['path' => $path]);
-}
 
 
     public function changePassword(Request $request): \Illuminate\Http\JsonResponse
@@ -97,14 +104,51 @@ class ProfileController extends Controller
 
         $staff = Auth::user();
 
-        if (!\Hash::check($request->current_password, $staff->password_hash)) {
+        if (!Hash::check($request->current_password, $staff->password_hash)) {
             return response()->json(['error' => 'Current password is incorrect'], 401);
         }
 
-        $staff->update(['password_hash' => \Hash::make($request->password)]);
+        $staff->password_hash = Hash::make($request->password);
+
+        // Always update via query builder to avoid undefined method errors
+        DB::table('staffs')->where('staff_id', $staff->staff_id)->update([
+            'password_hash' => $staff->password_hash,
+        ]);
 
         Log::info('Password updated for staff', ['staff_id' => $staff->staff_id]);
 
         return response()->json(['message' => 'Password updated successfully']);
     }
+    public function getProfile()
+{
+    try {
+        $staff = auth()->user(); // Will return Staff instance
+        
+        if (!$staff) {
+            return response()->json(['error' => 'Unauthenticated'], 401);
+        }
+
+        // Eager load relationships
+        $staff->load('user');
+
+        return response()->json([
+            'staff' => [
+                'staff_id' => $staff->staff_id,
+                'username' => $staff->username,
+                'email' => $staff->email,
+                'role_id' => $staff->role_id
+            ],
+            'user_profile' => $staff->user ? [
+                'profile_picture' => $staff->user->profile_picture,
+                'preferences' => $staff->user->preferences
+            ] : null
+        ]);
+        
+    } catch (\Exception $e) {
+        return response()->json([
+            'error' => 'Server error',
+            'message' => $e->getMessage()
+        ], 500);
+    }
+}
 }

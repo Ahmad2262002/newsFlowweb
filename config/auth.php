@@ -38,7 +38,7 @@ return [
     'guards' => [
         'web' => [
             'driver' => 'session',
-            'provider' => 'users', // Uses the 'users' provider for web authentication
+            'provider' => 'staff', // Uses the 'users' provider for web authentication
         ],
 
         'api' => [

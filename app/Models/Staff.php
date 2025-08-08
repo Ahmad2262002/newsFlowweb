@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Models;
+use Illuminate\Database\Eloquent\Model; // Add this import
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -41,10 +42,11 @@ class Staff extends Authenticatable
         return $this->belongsTo(Role::class, 'role_id');
     }
 
-    public function employee()
-    {
-        return $this->hasOne(Employee::class, 'staff_id');
-    }
+    // In Staff model (app/Models/Staff.php)
+public function employee()
+{
+    return $this->hasOne(Employee::class, 'staff_id', 'staff_id');
+}
 
     public function admin()
     {

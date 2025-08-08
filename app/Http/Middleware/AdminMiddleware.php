@@ -8,12 +8,12 @@ use Symfony\Component\HttpFoundation\Response;
 
 class AdminMiddleware
 {
-    public function handle(Request $request, Closure $next)
+   public function handle(Request $request, Closure $next): Response
     {
-        // Check if the authenticated user is an admin (role_id = 2)
-        if (auth()->user()->role_id !== 2) {
-            abort(403, 'Unauthorized: Only admins can access this route.');
+        if (auth()->check() && (auth()->user()->role_id == 1 || auth()->user()->role_id == 2)) {
+            return $next($request);
         }
-        return $next($request);
+
+        return redirect('/dashboard')->with('error', 'Unauthorized access');
     }
 }

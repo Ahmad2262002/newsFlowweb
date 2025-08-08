@@ -10,7 +10,8 @@ use Illuminate\Foundation\Auth\User as Authenticatable; // Change base class
 
 class User extends Model 
 {
-    use HasApiTokens, HasFactory;
+    // use HasApiTokens; // Use Sanctum's token features
+    use  HasFactory;
 
     protected $primaryKey = 'user_id';
     protected $fillable = [
@@ -90,4 +91,17 @@ public function getEmailAttribute()
     {
         return $this->hasMany(Feedback::class, 'user_id');
     }
+
+    // In app/Models/User.php
+public function employee()
+{
+    return $this->hasOneThrough(
+        Employee::class,
+        Staff::class,
+        'staff_id', // Foreign key on Staff table
+        'staff_id', // Foreign key on Employee table
+        'staff_id', // Local key on User table
+        'staff_id'  // Local key on Staff table
+    );
+}
 }

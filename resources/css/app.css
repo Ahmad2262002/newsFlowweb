@@ -1,0 +1,5 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+/* Add to your app.css */
+[x-cloak] { display: none !important; }

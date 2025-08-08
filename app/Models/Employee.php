@@ -12,10 +12,16 @@ class Employee extends Model
     protected $primaryKey = 'employee_id';
     protected $fillable = ['staff_id', 'position', 'hire_date'];
 
-    public function staff()
-    {
-        return $this->belongsTo(Staff::class, 'staff_id');
-    }
+     // casting
+    protected $casts = [
+        'hire_date' => 'date',
+    ];
+
+    // In app/Models/Employee.php
+public function staff()
+{
+    return $this->belongsTo(Staff::class, 'staff_id', 'staff_id');
+}
 
     public function articles()
     {

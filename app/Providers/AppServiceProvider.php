@@ -6,6 +6,7 @@ use Illuminate\Support\ServiceProvider;
 
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Pagination\Paginator;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -29,5 +30,8 @@ class AppServiceProvider extends ServiceProvider
         Carbon::serializeUsing(function ($carbon) {
             return $carbon->format('Y-m-d H:i:s');
         });
+
+        Paginator::useBootstrap();
+        Paginator::useBootstrapFive();
     }
 }

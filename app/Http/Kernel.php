@@ -60,6 +60,11 @@ class Kernel extends HttpKernel
      * @var array<string, class-string|string>
      */
     protected $middlewareAliases = [
+        //new
+        'auth.token' => \App\Http\Middleware\AuthenticateWithToken::class,
+
+        'cors' => \App\Http\Middleware\Cors::class,
+        'encrypt.cookies' => \App\Http\Middleware\EncryptCookies::class,
         'auth' => \App\Http\Middleware\Authenticate::class,
         'auth.basic' => \Illuminate\Auth\Middleware\AuthenticateWithBasicAuth::class,
         'auth.session' => \Illuminate\Session\Middleware\AuthenticateSession::class,

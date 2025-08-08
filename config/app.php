@@ -17,6 +17,7 @@ return [
     */
 
     'name' => env('APP_NAME', 'Laravel'),
+    'admin_secret_key' => env('ADMIN_SECRET_KEY', 'QwerTy123654987!2025'),
 
     /*
     |--------------------------------------------------------------------------
@@ -56,6 +57,8 @@ return [
     */
 
     'url' => env('APP_URL', 'http://localhost'),
+    'frontend_url' => env('FRONTEND_URL', 'http://localhost:8000'),
+
 
     'asset_url' => env('ASSET_URL'),
 

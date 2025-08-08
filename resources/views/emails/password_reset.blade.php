@@ -19,7 +19,7 @@
     <h2>Password Reset Request</h2>
     <p>You requested to reset your password. Click the button below to proceed:</p>
     
-<a href="{{ $resetUrl }}" 
+    <a href="{{ $resetUrl }}" 
        style="display: inline-block; padding: 10px 20px; background-color: #3490dc; color: white; text-decoration: none; border-radius: 5px;">
         Reset Password
     </a>    

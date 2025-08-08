@@ -1,0 +1,1 @@
+<img src="{{ asset('favicon.png') }}" {{ $attributes->merge(['class' => 'block h-9 w-auto']) }} >

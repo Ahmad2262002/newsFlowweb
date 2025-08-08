@@ -1,7 +1,5 @@
 <?php
 
-// app/Http/Controllers/Api/EmployeeController.php
-
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
@@ -13,10 +11,32 @@ use App\Models\AdminAction;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 use App\Models\User;
+use App\Models\Article;
+use App\Models\Category;
 
 class EmployeeController extends Controller
 {
-    // Add an employee (admin only)
+    // Web Interface Methods
+    
+    public function index()
+    {
+        if(request()->wantsJson()) {
+            $employees = Employee::with(['staff' => function($query) {
+                $query->select('staff_id', 'username', 'email', 'created_at');
+            }])->get();
+
+            return response()->json(['data' => $employees]);
+        }
+
+        $employees = Employee::with('staff')->paginate(10);
+        return view('admin.employees.index', compact('employees'));
+    }
+
+    public function create()
+    {
+        return view('admin.employees.create');
+    }
+
     public function store(Request $request)
     {
         $request->validate([
@@ -28,43 +48,57 @@ class EmployeeController extends Controller
         ]);
 
         $staff = Staff::create([
-            'role_id' => 3, // Employee role
+            'role_id' => 3,
             'username' => $request->username,
             'email' => $request->email,
             'password_hash' => Hash::make($request->password),
             'is_locked' => false,
         ]);
 
-        // Create employee profile
         $employee = Employee::create([
             'staff_id' => $staff->staff_id,
             'department' => $request->department,
             'position' => $request->position,
             'hire_date' => $request->hire_date,
         ]);
-        // Create minimal user record (if it doesn't exist)
-        $user = User::firstOrCreate(
+
+        User::firstOrCreate(
             ['staff_id' => $staff->staff_id],
-            [
-                'preferences' => '{}',
-                'profile_picture' => null
-            ]
+            ['preferences' => '{}', 'profile_picture' => null]
         );
 
-         // Generate API token
-        $token = $staff->createToken('employee-access-token')->plainTextToken;
+        AdminActionLogger::log('add_employee', 'Added new employee: ' . $staff->username, 
+            auth()->user()->staff_id);
 
+        if($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Employee added successfully',
+                'employee' => $employee->load('staff')
+            ], 201);
+        }
 
-AdminActionLogger::log('add_employee', 'Added new employee: ' . $staff->username, auth()->user()->staff_id, $staff->staff_id);
-        return response()->json([
-            'staff' => $staff,
-            'employee_profile' => $employee,
-            'access_token' => $token,
-            'token_type' => 'Bearer'
-        ], 201);
+        return redirect()->route('admin.employees.index')
+            ->with('success', 'Employee added successfully');
     }
 
-    // Edit an employee (admin only)
+    public function show($id)
+    {
+        $employee = Employee::with('staff')->findOrFail($id);
+
+        if(request()->wantsJson()) {
+            return response()->json(['data' => $employee]);
+        }
+
+        return view('admin.employees.show', compact('employee'));
+    }
+
+    public function edit($id)
+    {
+        $employee = Employee::with('staff')->findOrFail($id);
+        return view('admin.employees.edit', compact('employee'));
+    }
+
     public function update(Request $request, $id)
     {
         $employee = Employee::findOrFail($id);
@@ -73,45 +107,111 @@ AdminActionLogger::log('add_employee', 'Added new employee: ' . $staff->username
         $request->validate([
             'username' => ['string', 'max:255', 'unique:staffs,username,' . $staff->staff_id . ',staff_id'],
             'email' => ['email', 'unique:staffs,email,' . $staff->staff_id . ',staff_id'],
+            'password' => ['nullable', 'confirmed', Rules\Password::defaults()],
+            'department' => ['string'],
             'position' => ['string'],
             'hire_date' => ['date'],
         ]);
 
-        $staff->update([
+        $staffData = [
             'username' => $request->username ?? $staff->username,
             'email' => $request->email ?? $staff->email,
-        ]);
+        ];
+
+        if ($request->password) {
+            $staffData['password_hash'] = Hash::make($request->password);
+        }
+
+        $staff->update($staffData);
 
         $employee->update([
+            'department' => $request->department ?? $employee->department,
             'position' => $request->position ?? $employee->position,
             'hire_date' => $request->hire_date ?? $employee->hire_date,
         ]);
 
-        AdminActionLogger::log('update_employee', 'Updated employee: ' . $staff->username, $staff->staff_id);
+        AdminActionLogger::log('update_employee', 'Updated employee: ' . $staff->username, 
+            auth()->user()->staff_id);
 
-        return response()->json([
-            'employee_profile' => $employee,
-        ]);
+        if($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Employee updated successfully',
+                'employee' => $employee->load('staff')
+            ]);
+        }
+
+        return redirect()->route('admin.employees.index')
+            ->with('success', 'Employee updated successfully');
     }
 
-    // Delete an employee (admin only)
     public function destroy($id)
     {
         $employee = Employee::findOrFail($id);
         $staff = $employee->staff;
     
-        // Log the admin action before deleting the employee
-        AdminActionLogger::log('delete_employee', 'Deleted employee: ' . $staff->username, $staff->staff_id);
+        AdminActionLogger::log('delete_employee', 'Deleted employee: ' . $staff->username, 
+            auth()->user()->staff_id);
     
-        // Set target_staff_id to null in related admin actions
         AdminAction::where('target_staff_id', $staff->staff_id)->update(['target_staff_id' => null]);
     
-        // Force delete the employee and related staff record
         $employee->forceDelete();
         $staff->forceDelete();
+
+        if(request()->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Employee deleted successfully'
+            ]);
+        }
     
+        return redirect()->route('admin.employees.index')
+            ->with('success', 'Employee deleted successfully');
+    }
+
+    public function dashboard()
+{
+    $employeeId = auth()->user()->employee->employee_id;
+    
+    $articles = Article::where('employee_id', $employeeId)
+        ->orderBy('created_at', 'desc')
+        ->paginate(10);
+
+    $publishedCount = Article::where('employee_id', $employeeId)
+        ->where('status', 1)
+        ->count();
+
+    $draftCount = Article::where('employee_id', $employeeId)
+        ->where('status', 0)
+        ->count();
+
+    // For API requests
+    if(request()->wantsJson()) {
         return response()->json([
-            'message' => 'Employee deleted successfully',
+            'articles' => $articles,
+            'categories' => Category::all(),
+            'publishedCount' => $publishedCount,
+            'draftCount' => $draftCount
         ]);
     }
+
+    // For web requests
+    return view('employee.dashboard', [
+        'articles' => $articles,
+        'publishedCount' => $publishedCount,
+        'draftCount' => $draftCount
+    ]);
+}
+
+public function getCategories()
+{
+    $categories = Category::all();
+    
+    return response()->json([
+        'success' => true,
+        'data' => $categories,
+        'current_page' => 1,
+        'last_page' => 1
+    ]);
+}
 }
